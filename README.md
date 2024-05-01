@@ -16,6 +16,8 @@
 
 ![Postman](https://img.shields.io/badge/Testing%20Library-E33332.svg?style=for-the-badge&logo=Testing-Library&logoColor=white)
 ![Postman](https://img.shields.io/badge/JUnit5-25A162.svg?style=for-the-badge&logo=JUnit5&logoColor=white)
+
+<span style="font-bold">In this example we'll write test for the Users package</span>
 ### Package com.example.blog_app_springboot.users:
 
 ```java
