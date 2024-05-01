@@ -12,7 +12,7 @@
 ## In Progress...
 ![combined](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/51f3c7a0-a153-4d22-8d40-48edcdc809a6)
 
-## Junit testing in java:
+## Junit testing in Spring Boot:
 
 ![Postman](https://img.shields.io/badge/Testing%20Library-E33332.svg?style=for-the-badge&logo=Testing-Library&logoColor=white)
 ![Postman](https://img.shields.io/badge/JUnit5-25A162.svg?style=for-the-badge&logo=JUnit5&logoColor=white)
