@@ -71,3 +71,28 @@ public class JpaTestConfig {
 }
 
 ```
+### Test Result:
+![Screenshot from 2024-05-01 16-38-13](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/2d8567aa-ef2f-4877-9b3a-cfe7014105d4)
+
+
+### UsersServiceTests.java:
+```java
+  public class UsersServiceTests {
+    @Autowired
+    UserService userService;
+
+    @Test
+    void can_create_users() {
+        var user = userService.createUser(new CreateUserRequest(
+           "najat Oracle",
+           "15062024",
+           "najatOracle@gmail.com"
+        ));
+
+        Assertions.assertNotNull(user);
+        Assertions.assertEquals("najat Oracle", user.getUsername());
+    }
+}
+```
+#### Test Result:
+![Screenshot from 2024-05-01 16-37-50](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/82941dde-ab08-4ab2-b390-bc2372e5e67d)
