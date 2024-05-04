@@ -8,8 +8,8 @@ import org.hibernate.Hibernate;
 @Data
 @Entity(name = "users")
 @Getter
-@Setter
 @Builder
+@Setter
 @ToString
 @RequiredArgsConstructor
 @AllArgsConstructor

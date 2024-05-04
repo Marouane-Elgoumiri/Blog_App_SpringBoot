@@ -3,9 +3,9 @@ server:
 spring:
   datasource:
     driver-class-name: org.h2.Driver
-    url: jdbc:h2:file:./blog_app;
+    url: jdbc:h2:./blog_app;AUTO_SERVER=TRUE;
     username: test
-    password:
+    password: test
   h2:
     console.enabled: true
   jpa:

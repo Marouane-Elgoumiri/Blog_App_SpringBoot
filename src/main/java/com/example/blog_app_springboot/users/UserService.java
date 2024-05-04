@@ -1,6 +1,7 @@
 package com.example.blog_app_springboot.users;
 
 import com.example.blog_app_springboot.users.dtos.CreateUserRequest;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -9,9 +10,11 @@ import org.springframework.stereotype.Service;
 public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private UserRepository userRepository;
+    private final ModelMapper modelMapper;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, ModelMapper modelMapper) {
         this.userRepository = userRepository;
+        this.modelMapper = modelMapper;
     }
     public UserEntity createUser(CreateUserRequest request) {
         var newUser = UserEntity.builder()
