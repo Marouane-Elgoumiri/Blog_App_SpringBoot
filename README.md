@@ -98,3 +98,52 @@ public class JpaTestConfig {
 ```
 #### Test Result:
 ![Screenshot from 2024-05-01 16-37-50](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/82941dde-ab08-4ab2-b390-bc2372e5e67d)
+
+## Setting up Error Exception Handler
+
+### Create an ErrorResponse class:
+
+```java
+  package com.example.blog_app_springboot.common.dtos;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Builder
+@Data
+public class ErrorResponse {
+    private String message;
+    private String details;
+}
+
+```
+### Creating the Response entity
+```java
+  @ExceptionHandler({
+            UserService.UserNotFoundException.class
+    })
+    ResponseEntity<ErrorResponse> handleUSerNotFoundException(Exception ex){
+        String message;
+        HttpStatus status;
+
+        if(ex instanceof UserService.UserNotFoundException){
+           message = ex.getMessage();
+           status = HttpStatus.NOT_FOUND;
+        }else{
+            message = "Something went wrong";
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        ErrorResponse response = ErrorResponse.builder()
+                .message(message)
+                .build();
+        return ResponseEntity.status(status).body(response);
+    }
+```
+### Example of use:
+<div align="center>
+
+![Screenshot from 2024-05-04 23-35-32](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/a1272369-bee0-4513-a77b-2b8a59b4e5e4)
+
+
+  
+</div>
