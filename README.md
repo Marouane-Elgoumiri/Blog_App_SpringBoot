@@ -140,10 +140,11 @@ public class ErrorResponse {
     }
 ```
 ### Example of use:
-<div align="center>
-
+```JSON
+{
+    "message": "User with Username: saido not found",
+    "details": null
+}
+```
 ![Screenshot from 2024-05-04 23-35-32](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/a1272369-bee0-4513-a77b-2b8a59b4e5e4)
 
-
-  
-</div>
