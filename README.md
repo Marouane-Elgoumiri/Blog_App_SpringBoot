@@ -39,8 +39,8 @@ public class UsersRepoTests {
     @Order(1)
     void can_create_user() {
         var user = UserEntity.builder()
-                .username("admin")
-                .password("admin")
+                .username("adminoq")
+                .password("adminoq")
                 .email("admin@gmail.com").build();
         userRepository.save(user);
     }
@@ -115,7 +115,6 @@ public class ErrorResponse {
     ResponseEntity<ErrorResponse> handleUSerNotFoundException(Exception ex){
         String message;
         HttpStatus status;
-
         if(ex instanceof UserService.UserNotFoundException){
            message = ex.getMessage();
            status = HttpStatus.NOT_FOUND;
@@ -129,6 +128,7 @@ public class ErrorResponse {
         return ResponseEntity.status(status).body(response);
     }
 ```
+
 ### Example of use:
 ```JSON
 {
