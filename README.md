@@ -50,16 +50,6 @@ public class UsersRepoTests {
 
 ### Setting up the JpaTestConfig:
 ```java
-package com.example.blog_app_springboot;
-
-import com.zaxxer.hikari.HikariDataSource;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-
-import javax.sql.DataSource;
-
 @Configuration
 public class JpaTestConfig {
     @Bean
@@ -142,7 +132,7 @@ public class ErrorResponse {
 ### Example of use:
 ```JSON
 {
-    "message": "User with Username: saido not found",
+    "message": "User with Username: saidox not found",
     "details": null
 }
 ```
