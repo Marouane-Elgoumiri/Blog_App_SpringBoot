@@ -9,7 +9,7 @@
 [![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](Link)
 </div>
 
-## In Progress...
+
 ![combined](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/51f3c7a0-a153-4d22-8d40-48edcdc809a6)
 
 ## Junit testing in Spring Boot:
