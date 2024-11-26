@@ -1,4 +1,4 @@
-# Blog App with Spring Boot (Backend)
+# Blog App with Spring Boot
 
 <div align="center">
 
