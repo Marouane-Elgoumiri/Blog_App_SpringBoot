@@ -1,140 +1,297 @@
-# Blog App with Spring Boot
-
 <div align="center">
 
-[![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](Link)
-[![Spring](https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white)](Link)
-[![Postgres](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](Link)
-[![Intellij Idea](https://img.shields.io/badge/IntelliJ_IDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white)](Link)
-[![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](Link)
+# CogniPost Backend
+
+[![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.java.com/)
+[![Spring](https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white)](https://spring.io/)
+[![Postgres](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Intellij Idea](https://img.shields.io/badge/IntelliJ_IDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white)](https://www.jetbrains.com/idea/)
+[![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://www.postman.com/)
+
+[![Testing Library](https://img.shields.io/badge/Testing%20Library-E33332.svg?style=for-the-badge&logo=Testing-Library&logoColor=white)](https://testing-library.com/)
+[![JUnit5](https://img.shields.io/badge/JUnit5-25A162.svg?style=for-the-badge&logo=JUnit5&logoColor=white)](https://junit.org/junit5/)
+
 </div>
 
+---
 
-![combined](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/51f3c7a0-a153-4d22-8d40-48edcdc809a6)
+## Overview
 
-## Junit testing in Spring Boot:
+**CogniPost** is a full-featured blog platform REST API built with Spring Boot 3.2.4 and Java 17. It provides a complete backend for a modern blogging application with JWT authentication, article management, nested comments, social interactions, personalized feeds, and full-text search. Designed to be consumed by a Next.js SSR frontend.
 
-![Postman](https://img.shields.io/badge/Testing%20Library-E33332.svg?style=for-the-badge&logo=Testing-Library&logoColor=white)
-![Postman](https://img.shields.io/badge/JUnit5-25A162.svg?style=for-the-badge&logo=JUnit5&logoColor=white)
+---
 
-<span style="font-size: large">In this example we'll write test for the Users package</span>
-### Package com.example.blog_app_springboot.users:
-
-```java
-  package com.example.blog_app_springboot.users;
-
-
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
-
-@DataJpaTest
-@ActiveProfiles("test")
-public class UsersRepoTests {
-    @Autowired
-    private UserRepository userRepository;
-    @Test
-    @Order(1)
-    void can_create_user() {
-        var user = UserEntity.builder()
-                .username("adminoq")
-                .password("adminoq")
-                .email("admin@gmail.com").build();
-        userRepository.save(user);
-    }
-}
+## Architecture
 
 ```
-
-### Setting up the JpaTestConfig:
-```java
-@Configuration
-public class JpaTestConfig {
-    @Bean
-    @Profile("test")
-    public DataSource dataSource() {
-        var dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.h2.Driver");
-        dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
-        return dataSource;
-    }
-}
-
-```
-### Test Result:
-![Screenshot from 2024-05-01 16-38-13](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/2d8567aa-ef2f-4877-9b3a-cfe7014105d4)
-
-
-### UsersServiceTests.java:
-```java
-  public class UsersServiceTests {
-    @Autowired
-    UserService userService;
-
-    @Test
-    void can_create_users() {
-        var user = userService.createUser(new CreateUserRequest(
-           "najat Oracle",
-           "15062024",
-           "najatOracle@gmail.com"
-        ));
-
-        Assertions.assertNotNull(user);
-        Assertions.assertEquals("najat Oracle", user.getUsername());
-    }
-}
-```
-#### Test Result:
-![Screenshot from 2024-05-01 16-37-50](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/82941dde-ab08-4ab2-b390-bc2372e5e67d)
-
-## Setting up Error Exception Handler
-
-### Create an ErrorResponse class:
-
-```java
-  package com.example.blog_app_springboot.common.dtos;
-
-import lombok.Builder;
-import lombok.Data;
-
-@Builder
-@Data
-public class ErrorResponse {
-    private String message;
-    private String details;
-}
-
-```
-### Creating the Response entity
-```java
-  @ExceptionHandler({
-            UserService.UserNotFoundException.class
-    })
-    ResponseEntity<ErrorResponse> handleUSerNotFoundException(Exception ex){
-        String message;
-        HttpStatus status;
-        if(ex instanceof UserService.UserNotFoundException){
-           message = ex.getMessage();
-           status = HttpStatus.NOT_FOUND;
-        }else{
-            message = "Something went wrong";
-            status = HttpStatus.INTERNAL_SERVER_ERROR;
-        }
-        ErrorResponse response = ErrorResponse.builder()
-                .message(message)
-                .build();
-        return ResponseEntity.status(status).body(response);
-    }
+com.example.blog_app_springboot/
+├── config/              # SecurityConfig, CorsConfig, OpenApiConfig, JpaConfig
+├── common/
+│   ├── base/            # BaseEntity with JPA auditing
+│   ├── dtos/            # ApiResponse<T>, PageResponse<T>, ErrorResponse
+│   ├── exceptions/      # GlobalExceptionHandler, custom exceptions
+│   ├── utils/           # SlugGenerator, ReadingTimeCalculator
+├── security/
+│   ├── jwt/             # JwtTokenProvider, JwtAuthFilter
+│   ├── config/          # SecurityFilterChain, CustomAuthenticationEntryPoint
+│   ├── auth/            # AuthService, AuthController
+│   └── util/            # SecurityUtil
+├── users/               # User management with BCrypt + roles
+├── articles/            # Full CRUD with drafts, tags, pagination
+├── comments/            # Nested comments with cascade delete
+├── tags/                # Auto-created tags, many-to-many with articles
+├── interactions/        # Likes & Bookmarks with toggle logic
+├── follows/             # User follow system with events
+├── feed/                # Personalized feed from followed users
+├── search/              # JPA Specifications + PostgreSQL full-text search
+└── notifications/       # Spring Events, async email service
 ```
 
-### Example of use:
-```JSON
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Spring Boot 3.2.4, Java 17 |
+| **Database** | H2 (dev), PostgreSQL (prod) |
+| **Auth** | JWT (jjwt 0.12.5), BCrypt, Spring Security |
+| **ORM** | Spring Data JPA, Hibernate 6.4 |
+| **Validation** | Bean Validation (Hibernate Validator) |
+| **API Docs** | springdoc OpenAPI 2.5 (Swagger UI) |
+| **Rate Limiting** | Bucket4j 8.10.1 |
+| **Testing** | JUnit 5, Mockito, MockMvc, @DataJpaTest |
+| **Build** | Gradle |
+
+## Design Patterns
+
+| Pattern | Implementation |
+|---------|---------------|
+| **Repository** | Spring Data JPA interfaces with custom queries |
+| **Service Layer** | Interface + implementation per module |
+| **DTO Pattern** | Request/Response DTOs decoupled from entities |
+| **Strategy** | Search strategies (PostgreSQL tsvector vs LIKE fallback) |
+| **Observer** | Spring `@EventListener` for domain events (comments, follows) |
+| **Specification** | JPA `Specification` for composable dynamic queries |
+| **Builder** | Lombok `@SuperBuilder` on all entities and DTOs |
+| **Decorator** | Rate limiting filter (Bucket4j) |
+
+## Security
+
+- **JWT stateless auth** — access token (15min) + refresh token (7 days)
+- **BCrypt** password hashing
+- **Role-based access** — `ROLE_USER`, `ROLE_ADMIN`
+- **Method-level security** — `@PreAuthorize` on protected endpoints
+- **CORS** configured for Next.js frontend (`localhost:3000`)
+- **Input validation** — `@Valid` + Bean Validation on all DTOs
+- **Token blacklist** — in-memory logout invalidation
+- **Custom error handlers** — `AuthenticationEntryPoint` (401), `AccessDeniedHandler` (403)
+
+---
+
+## API Endpoints
+
+**Base URL:** `/api/v1`
+
+### Authentication
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/auth/login` | No | Login with username + password |
+| `POST` | `/auth/refresh` | No | Refresh JWT tokens |
+| `POST` | `/auth/logout` | Token | Blacklist current token |
+
+### Users
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/users` | No | Register new user |
+| `GET` | `/users/{id}` | No | Get user profile |
+| `GET` | `/users/me` | Yes | Get current user |
+| `GET` | `/users/me/stats` | Yes | Author dashboard stats |
+| `POST` | `/users/{id}/follow` | Yes | Toggle follow |
+
+### Articles
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/articles` | No | List published articles (paginated) |
+| `GET` | `/articles/{slug}` | No | Get article by slug |
+| `GET` | `/articles/search` | No | Search articles (q, tag, author) |
+| `GET` | `/articles/popular` | No | Popular articles |
+| `POST` | `/articles` | Yes | Create article (draft) |
+| `PUT` | `/articles/{id}` | Owner | Update article |
+| `DELETE` | `/articles/{id}` | Owner | Delete article |
+| `GET` | `/articles/my` | Yes | Get my articles (incl. drafts) |
+
+### Comments
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/articles/{slug}/comments` | Yes | Create comment |
+| `GET` | `/articles/{slug}/comments` | No | Get all comments (nested) |
+| `GET` | `/articles/{slug}/comments/{id}/replies` | No | Get replies |
+| `DELETE` | `/articles/{slug}/comments/{id}` | Owner | Delete comment |
+
+### Tags
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/tags` | No | List all tags |
+| `GET` | `/tags/{slug}` | No | Get tag by slug |
+| `POST` | `/tags` | Admin | Create tag |
+| `DELETE` | `/tags/{id}` | Admin | Delete tag |
+
+### Interactions
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/articles/{slug}/like` | Yes | Toggle like |
+| `POST` | `/articles/{slug}/bookmark` | Yes | Toggle bookmark |
+
+### Feed
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/feed` | Yes | Personalized feed |
+
+---
+
+## Response Format
+
+All responses are wrapped in a standardized envelope:
+
+```json
 {
-    "message": "User with Username: saidox not found",
-    "details": null
+  "success": true,
+  "message": "Operation successful",
+  "data": { ... },
+  "timestamp": "2026-04-04T21:22:42.873991"
 }
 ```
-![Screenshot from 2024-05-04 23-35-32](https://github.com/Marouane-Elgoumiri/Blog_App_SpringBoot/assets/96888594/a1272369-bee0-4513-a77b-2b8a59b4e5e4)
 
+Paginated responses use `PageResponse<T>`:
+
+```json
+{
+  "content": [ ... ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 42,
+  "totalPages": 5,
+  "last": false
+}
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Java 17+
+- Gradle 8.x
+- PostgreSQL (for production)
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/CogniPost.git
+cd CogniPost
+
+# Run with dev profile (H2 database)
+./gradlew bootRun
+
+# Run with prod profile (PostgreSQL)
+./gradlew bootRun --args='--spring.profiles.active=prod'
+```
+
+### Configuration
+
+| Profile | Database | Port |
+|---------|----------|------|
+| `dev` | H2 (file-based) | 8080 |
+| `prod` | PostgreSQL | ${PORT} |
+| `test` | H2 (in-memory) | - |
+
+**H2 Console (dev):** `http://localhost:8080/h2-console`
+
+**Swagger UI:** `http://localhost:8080/swagger-ui.html`
+
+### Environment Variables (prod)
+
+| Variable | Description |
+|----------|-------------|
+| `DB_URL` | PostgreSQL connection URL |
+| `DB_USERNAME` | Database username |
+| `DB_PASSWORD` | Database password |
+| `JWT_SECRET` | JWT signing key (min 256 bits) |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins |
+
+---
+
+## Testing
+
+```bash
+# Run all tests
+./gradlew test
+
+# Run with coverage
+./gradlew test jacocoTestReport
+
+# Run specific test class
+./gradlew test --tests "AuthIntegrationTest"
+```
+
+**Test Coverage:** 95+ unit and integration tests covering:
+- Repository layer (`@DataJpaTest`)
+- Service layer (Mockito unit tests)
+- Integration tests (`@SpringBootTest` + MockMvc)
+- Security tests (auth flow, token validation, role-based access)
+
+---
+
+## Database Schema
+
+```
+users ──────────────┐
+  ├── id            │
+  ├── username      │
+  ├── password      │
+  ├── email         │
+  ├── bio           │
+  ├── image         │
+  └── roles         │
+                    │
+articles ───────────┤
+  ├── id            │
+  ├── title         │
+  ├── slug          │
+  ├── subtitle      │
+  ├── body          │
+  ├── status        │
+  ├── author_id ────┘
+  └── tags ────────┐
+                   │
+comments           │
+  ├── id           │
+  ├── title        │
+  ├── body         │
+  ├── article_id ──┘
+  ├── author_id ───┐
+  └── parent_id    │
+                   │
+tags               │
+  ├── id           │
+  ├── name         │
+  └── slug         │
+                   │
+likes              │
+  ├── user_id ─────┘
+  └── article_id ──┘
+
+bookmarks          │
+  ├── user_id ─────┘
+  └── article_id ──┘
+
+follows            │
+  ├── follower_id ─┘
+  └── following_id ┘
+```
+
+---
+
+## License
+
+MIT

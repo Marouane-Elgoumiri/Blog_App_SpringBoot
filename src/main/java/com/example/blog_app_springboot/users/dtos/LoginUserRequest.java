@@ -1,16 +1,13 @@
 package com.example.blog_app_springboot.users.dtos;
 
-import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import lombok.NonNull;
 
 @Data
 public class LoginUserRequest {
-    @NonNull
+    @NotBlank(message = "Username is required")
     private String username;
-    @NonNull
-    private String password;
-    @Nullable
-    private String email;
 
+    @NotBlank(message = "Password is required")
+    private String password;
 }

@@ -1,19 +1,22 @@
 package com.example.blog_app_springboot.articles.dtos;
 
-import jakarta.annotation.Nullable;
-import lombok.AccessLevel;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
-import lombok.NonNull;
-import lombok.Setter;
+
+import java.util.List;
 
 @Data
-@Setter(AccessLevel.NONE)
 public class CreateArticleRequest {
-    @NonNull
+    @NotBlank(message = "Title is required")
+    @Size(max = 200, message = "Title must not exceed 200 characters")
     private String title;
-    @NonNull
-    private String body;
-    @Nullable
+
+    @Size(max = 500, message = "Subtitle must not exceed 500 characters")
     private String subtitle;
 
+    @NotBlank(message = "Body is required")
+    private String body;
+
+    private List<String> tags;
 }

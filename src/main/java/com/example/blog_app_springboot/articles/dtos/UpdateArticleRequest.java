@@ -1,17 +1,19 @@
 package com.example.blog_app_springboot.articles.dtos;
 
-import jakarta.annotation.Nullable;
-import lombok.AccessLevel;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
-import lombok.Setter;
 
-@Setter(AccessLevel.NONE)
+import java.util.List;
+
 @Data
 public class UpdateArticleRequest {
-    @Nullable
+    @Size(max = 200, message = "Title must not exceed 200 characters")
     private String title;
-    @Nullable
-    private String body;
-    @Nullable
+
+    @Size(max = 500, message = "Subtitle must not exceed 500 characters")
     private String subtitle;
+
+    private String body;
+
+    private List<String> tags;
 }
