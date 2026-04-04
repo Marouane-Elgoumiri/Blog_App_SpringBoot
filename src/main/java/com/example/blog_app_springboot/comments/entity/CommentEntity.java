@@ -14,7 +14,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Table(name = "comments", indexes = {
-    @Index(name = "idx_comment_article", columnList = "article_id")
+    @Index(name = "idx_comment_article", columnList = "article_id"),
+    @Index(name = "idx_comment_author", columnList = "author_id"),
+    @Index(name = "idx_comment_created_at", columnList = "created_at"),
+    @Index(name = "idx_comment_parent", columnList = "parent_id")
 })
 public class CommentEntity extends BaseEntity {
 
@@ -36,5 +39,6 @@ public class CommentEntity extends BaseEntity {
     private CommentEntity parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Builder.Default
     private java.util.List<CommentEntity> replies = new java.util.ArrayList<>();
 }

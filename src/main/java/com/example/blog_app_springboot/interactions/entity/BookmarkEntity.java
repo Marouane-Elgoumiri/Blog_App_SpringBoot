@@ -13,9 +13,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Table(name = "bookmarks", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_user_article_bookmark", columnNames = {"user_id", "article_id"})
-})
+@Table(name = "bookmarks",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_article_bookmark", columnNames = {"user_id", "article_id"})
+    },
+    indexes = {
+        @Index(name = "idx_bookmark_article", columnList = "article_id"),
+        @Index(name = "idx_bookmark_user", columnList = "user_id")
+    }
+)
 public class BookmarkEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

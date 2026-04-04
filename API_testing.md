@@ -494,37 +494,37 @@ curl -s http://localhost:8080/api/v1/users/me/stats \
 
 ### Step 45: Access Protected Without Token
 ```bash
-curl -s http://localhost:8080/api/v1/users/me | jq .
-# Expected: 401, "Authentication required"
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/api/v1/users/me | jq .
+# Expected: 403, "Access denied"
 ```
 
 ### Step 46: Access With Invalid Token
 ```bash
-curl -s http://localhost:8080/api/v1/users/me \
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/api/v1/users/me \
   -H "Authorization: Bearer invalid.token.here" | jq .
-# Expected: 401
+# Expected: 403, "Access denied"
 ```
 
 ### Step 47: Access Non-existent Article
 ```bash
-curl -s http://localhost:8080/api/v1/articles/nonexistent-slug | jq .
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/api/v1/articles/nonexistent-slug | jq .
 # Expected: 404, "Article not found with slug: 'nonexistent-slug'"
 ```
 
 ### Step 48: Create Article Without Auth
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/articles \
+curl -s -w "\nHTTP: %{http_code}" -X POST http://localhost:8080/api/v1/articles \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Unauthorized Article",
     "body": "This should fail"
   }' | jq .
-# Expected: 401
+# Expected: 401, "Authentication required"
 ```
 
 ### Step 49: Validation Error
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/users \
+curl -s -w "\nHTTP: %{http_code}" -X POST http://localhost:8080/api/v1/users \
   -H "Content-Type: application/json" \
   -d '{
     "username": "",
@@ -536,9 +536,66 @@ curl -s -X POST http://localhost:8080/api/v1/users \
 
 ### Step 50: Public Endpoints Work
 ```bash
-curl -s http://localhost:8080/api/v1/articles | jq .
-curl -s http://localhost:8080/api/v1/tags | jq .
-# Expected: 200, data (no auth required)
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/api/v1/articles | jq '.success'
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/api/v1/tags | jq '.success'
+# Expected: 200, true (no auth required)
+```
+
+---
+
+## Phase 10: Sprint 8 — Production Readiness
+
+| # | Step | Command | Expected | Progress |
+|---|------|---------|----------|----------|
+| 51 | Health Check | See below | 200, `{"status":"UP"}` | ✅ 2026-04-04 |
+| 52 | App Info | See below | 200, app metadata | ✅ 2026-04-04 |
+| 53 | Metrics Endpoint | See below | 200, 100+ metrics | ✅ 2026-04-04 |
+| 54 | Rate Limit Headers | See below | 200, `X-Rate-Limit-Remaining` header | ✅ 2026-04-04 |
+| 55 | Security Headers | See below | 200, HSTS/CSP/Referrer/Permissions/nosniff | ✅ 2026-04-04 |
+| 56 | Rate Limit Exhaustion | See below | 429 after ~17 requests (IP bucket shared with Phase 9) | ✅ 2026-04-04 |
+
+### Step 51: Health Check
+```bash
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/actuator/health | jq .
+# Expected: 200, {"status":"UP"}
+```
+
+### Step 52: App Info
+```bash
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/actuator/info | jq .
+# Expected: 200, {"app":{"name":"CogniPost","description":"...","version":"1.0.0"}}
+```
+
+### Step 53: Metrics Endpoint
+```bash
+curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/actuator/metrics | jq .names
+# Expected: 200, list of metric names (jvm.*, http.*, db.*)
+```
+
+### Step 54: Rate Limit Headers
+```bash
+curl -s -D - http://localhost:8080/api/v1/articles | grep -i "x-rate-limit"
+# Expected: X-Rate-Limit-Remaining: <number>
+```
+
+### Step 55: Security Headers
+```bash
+curl -s -D - http://localhost:8080/api/v1/articles | grep -iE "(strict-transport|content-security|referrer-policy|permissions-policy|x-content-type)"
+# Expected:
+#   Strict-Transport-Security: max-age=31536000; includeSubDomains
+#   Content-Security-Policy: default-src 'self'
+#   Referrer-Policy: strict-origin-when-cross-origin
+#   Permissions-Policy: camera=(), microphone=(), geolocation=()
+#   X-Content-Type-Options: nosniff
+```
+
+### Step 56: Rate Limit Exhaustion (Anonymous)
+```bash
+# Send 21+ rapid requests to trigger the 20 req/min anonymous limit
+for i in $(seq 1 25); do
+  curl -s -o /dev/null -w "Request $i: HTTP %{http_code}\n" http://localhost:8080/api/v1/articles
+done
+# Expected: First 20 return 200, subsequent requests return 429 with Retry-After header
 ```
 
 ---

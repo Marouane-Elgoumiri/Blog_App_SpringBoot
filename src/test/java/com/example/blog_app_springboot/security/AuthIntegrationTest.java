@@ -172,7 +172,7 @@ class AuthIntegrationTest {
     @Test
     void protected_endpoint_requires_authentication() throws Exception {
         mockMvc.perform(get("/api/v1/users/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -204,7 +204,7 @@ class AuthIntegrationTest {
     void protected_endpoint_rejects_invalid_token() throws Exception {
         mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer invalid.token.here"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     @Test

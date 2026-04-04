@@ -7,6 +7,8 @@ import com.example.blog_app_springboot.tags.dtos.TagResponse;
 import com.example.blog_app_springboot.tags.entity.TagEntity;
 import com.example.blog_app_springboot.tags.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class TagService {
     private final SlugGenerator slugGenerator;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "tags", key = "'all'")
     public List<TagResponse> getAllTags() {
         return tagRepository.findAll().stream()
                 .map(this::toResponse)
@@ -27,6 +30,7 @@ public class TagService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "tags", key = "#slug")
     public TagResponse getTagBySlug(String slug) {
         var tag = tagRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Tag", "slug", slug));
@@ -34,6 +38,7 @@ public class TagService {
     }
 
     @Transactional
+    @CacheEvict(value = "tags", allEntries = true)
     public TagResponse createTag(String name) {
         String normalizedName = name.toLowerCase().trim();
 
@@ -53,6 +58,7 @@ public class TagService {
     }
 
     @Transactional
+    @CacheEvict(value = "tags", allEntries = true)
     public void deleteTag(Long tagId) {
         var tag = tagRepository.findById(tagId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tag", "id", tagId));

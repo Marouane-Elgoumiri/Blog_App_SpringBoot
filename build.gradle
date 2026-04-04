@@ -29,6 +29,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // JWT Authentication
@@ -65,17 +66,14 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
 jar {
     manifest {
         attributes(
-                'Main-Class':'com.example.blog_app_springboot.BlogAppSpringBootApplication',
+                'Main-Class': 'com.example.blog_app_springboot.BlogAppSpringBootApplication'
         )
     }
 }
-test {
+
+tasks.named('test') {
     useJUnitPlatform()
 }

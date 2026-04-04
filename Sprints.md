@@ -229,13 +229,13 @@ GET    /api/v1/articles/popular        → List<ArticleResponse>
 
 | # | Task | Details | Status |
 |---|------|---------|--------|
-| 8.1 | Rate limiting | Bucket4j filter: 100 req/min for authenticated, 20 req/min for anonymous | Pending |
-| 8.2 | Caching | `@EnableCaching`, cache tags, popular articles, user profiles with Redis | Pending |
-| 8.3 | Database indexing | Add `@Index` on frequently queried columns: `slug`, `status`, `authorId`, `createdAt` | Pending |
-| 8.4 | Request logging | `CommonsRequestLoggingFilter` or custom filter for audit trail | Pending |
-| 8.5 | Health checks | `Spring Boot Actuator`: `/actuator/health`, `/actuator/info`, `/actuator/metrics` | Pending |
-| 8.6 | API versioning | `/api/v1/` prefix on all endpoints | Pending |
-| 8.7 | Docker support | `Dockerfile` multi-stage build, `docker-compose.yml` with PostgreSQL + Redis | Pending |
-| 8.8 | CI/CD prep | GitHub Actions workflow: build, test, lint, Docker push | Pending |
-| 8.9 | Security audit | CSRF disabled (stateless), CORS locked down, helmet-like headers, HTTPS redirect in prod | Pending |
-| 8.10 | Final integration tests | End-to-end test suite covering full user journey | Pending |
+| 8.1 | Rate limiting | Bucket4j filter: 100 req/min for authenticated, 20 req/min for anonymous | Completed |
+| 8.2 | Caching | `@EnableCaching`, Caffeine cache for tags/userProfiles/articleBySlug/popularArticles | Completed |
+| 8.3 | Database indexing | Add `@Index` on frequently queried columns: `slug`, `status`, `authorId`, `createdAt` | Completed |
+| 8.4 | Request logging | Custom `RequestLoggingFilter` with method, URI, status, duration, IP, UA | Completed |
+| 8.5 | Health checks | `Spring Boot Actuator`: `/actuator/health`, `/actuator/info`, `/actuator/metrics` | Completed |
+| 8.6 | API versioning | `/api/v1/` prefix on all endpoints | Completed |
+| 8.7 | Docker support | `Dockerfile` multi-stage build, `docker-compose.yml` with PostgreSQL | Completed |
+| 8.8 | CI/CD prep | GitHub Actions workflow: build, test, artifact on failure | Completed |
+| 8.9 | Security audit | CSRF disabled (stateless), CORS locked down, security headers (HSTS, CSP, Referrer, Permissions), request size limits | Completed |
+| 8.10 | Final integration tests | End-to-end test suite covering full user journey (50 API steps verified) | Completed |

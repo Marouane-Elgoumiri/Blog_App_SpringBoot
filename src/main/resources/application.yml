@@ -2,7 +2,19 @@ spring:
   profiles:
     active: dev
   application:
-    name: blog-app
+    name: cognipost
+
+info:
+  app:
+    name: CogniPost
+    description: Full-featured blog platform REST API
+    version: 1.0.0
+
+logging:
+  level:
+    root: INFO
+    com.example.blog_app_springboot: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 ---
 # DEV Profile
@@ -30,6 +42,12 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    request:
+      max-size: 10MB
+  error:
+    include-message: always
+    include-binding-errors: always
 
 app:
   jwt:
@@ -38,6 +56,21 @@ app:
     refresh-token-expiration-ms: 604800000
   cors:
     allowed-origins: http://localhost:3000
+  rate-limit:
+    authenticated-requests-per-minute: 100
+    anonymous-requests-per-minute: 20
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
 
 ---
 # PROD Profile
@@ -58,9 +91,26 @@ spring:
   h2:
     console:
       enabled: false
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: ${PORT:8080}
+  servlet:
+    request:
+      max-size: 10MB
+  error:
+    include-message: never
+    include-binding-errors: never
 
 app:
   jwt:
@@ -69,6 +119,27 @@ app:
     refresh-token-expiration-ms: 604800000
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:https://yourdomain.com}
+  rate-limit:
+    authenticated-requests-per-minute: 100
+    anonymous-requests-per-minute: 20
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.example.blog_app_springboot: INFO
+    org.springframework.web.filter.CommonsRequestLoggingFilter: INFO
 
 ---
 # TEST Profile
@@ -94,3 +165,6 @@ app:
     refresh-token-expiration-ms: 604800000
   cors:
     allowed-origins: http://localhost:3000
+  rate-limit:
+    authenticated-requests-per-minute: 100
+    anonymous-requests-per-minute: 20

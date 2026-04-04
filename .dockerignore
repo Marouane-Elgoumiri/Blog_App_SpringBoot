@@ -1,0 +1,11 @@
+.gradle/
+build/
+.idea/
+*.iml
+.git/
+blog_app.mv.db
+blog_app.trace.db
+*.log
+.DS_Store
+Sprints.md
+API_testing.md

@@ -13,9 +13,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Table(name = "likes", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_user_article_like", columnNames = {"user_id", "article_id"})
-})
+@Table(name = "likes",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_article_like", columnNames = {"user_id", "article_id"})
+    },
+    indexes = {
+        @Index(name = "idx_like_article", columnList = "article_id"),
+        @Index(name = "idx_like_user", columnList = "user_id")
+    }
+)
 public class LikeEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

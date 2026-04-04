@@ -19,7 +19,8 @@ import java.util.Set;
 @Table(name = "articles", indexes = {
     @Index(name = "idx_article_slug", columnList = "slug"),
     @Index(name = "idx_article_status", columnList = "status"),
-    @Index(name = "idx_article_author", columnList = "author_id")
+    @Index(name = "idx_article_author", columnList = "author_id"),
+    @Index(name = "idx_article_created_at", columnList = "created_at")
 })
 public class ArticleEntity extends BaseEntity {
 
