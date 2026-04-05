@@ -30,4 +30,15 @@ public class PageResponse<T> {
                 .last(page.isLast())
                 .build();
     }
+
+    public static <T> PageResponse<T> from(List<T> content, org.springframework.data.domain.Pageable pageable) {
+        return PageResponse.<T>builder()
+                .content(content)
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .totalElements(content.size())
+                .totalPages((int) Math.ceil((double) content.size() / pageable.getPageSize()))
+                .last(content.size() < pageable.getPageSize())
+                .build();
+    }
 }

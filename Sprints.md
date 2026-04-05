@@ -8,7 +8,7 @@
 
 ```
 com.example.blog_app_springboot/
-├── config/              # SecurityConfig, CorsConfig, OpenApiConfig, JpaConfig
+├── config/              # SecurityConfig, CorsConfig, OpenApiConfig, JpaConfig, CacheConfig, RateLimitingFilter, AppProperties
 ├── common/
 │   ├── base/            # BaseEntity (id, createdAt, updatedAt)
 │   ├── exceptions/      # GlobalExceptionHandler, custom exceptions
@@ -17,23 +17,24 @@ com.example.blog_app_springboot/
 │   └── constants/       # AppConstants, SecurityConstants
 ├── security/
 │   ├── jwt/             # JwtTokenProvider, JwtAuthFilter
-│   ├── config/          # SecurityFilterChain setup
-│   └── auth/            # AuthService, AuthenticationEntryPoint
+│   ├── config/          # SecurityFilterChain, CustomAuthenticationEntryPoint, CustomAccessDeniedHandler
+│   ├── auth/            # AuthService, AuthController, AuthResponse
+│   └── util/            # SecurityUtil
 ├── users/
 │   ├── entity/          # UserEntity, Role enum
 │   ├── repository/      # UserRepository
-│   ├── service/         # UserService interface + impl
+│   ├── service/         # UserService
 │   ├── controller/      # UsersController
-│   └── dtos/            # All request/response DTOs
+│   └── dtos/            # CreateUserRequest, UserResponse, UserStatsResponse
 ├── articles/            # (same structure)
 ├── comments/            # (same structure)
 ├── tags/                # (same structure)
 ├── interactions/        # Likes, Bookmarks
 ├── follows/             # Follow system
 ├── feed/                # FeedService, FeedController
-├── search/              # ArticleSpecification, SearchService
-├── analytics/           # ViewCountService, PopularArticles
-└── notifications/       # EmailService, Event listeners
+├── search/              # ArticleSpecifications, SearchService, SearchStrategy implementations
+├── analytics/           # ArticleViewEntity, ArticleViewRepository, ViewCountService
+└── notifications/       # EmailService, NotificationListener, CommentCreatedEvent, UserFollowedEvent
 ```
 
 ## Design Patterns
@@ -43,12 +44,11 @@ com.example.blog_app_springboot/
 | **Repository** | All `*Repository` interfaces | Data access abstraction (Spring Data JPA) |
 | **Service Layer** | All `*Service` interfaces + impls | Business logic separation, testable |
 | **DTO Pattern** | All `*Request` / `*Response` | Decouple API contracts from entities |
-| **Strategy** | `SlugGenerationStrategy`, `NotificationStrategy` | Swappable algorithms |
-| **Observer** | Spring `@EventListener` for domain events | Decoupled notifications (comment → email) |
-| **Specification** | `ArticleSpecification` for search | Dynamic, composable query building |
-| **Builder** | Lombok `@Builder` on entities/DTOs | Clean object construction |
-| **Factory** | `DtoFactory` for complex response mapping | Centralized DTO creation |
-| **Decorator** | Rate limiting filter | Non-invasive request throttling |
+| **Strategy** | `SearchStrategy` (PostgreSQL tsvector vs LIKE fallback) | Swappable search algorithms |
+| **Observer** | Spring `@EventListener` for domain events | Decoupled notifications (comment → email, follow → email) |
+| **Specification** | `ArticleSpecifications` for search | Dynamic, composable query building |
+| **Builder** | Lombok `@Builder` / `@SuperBuilder` on entities/DTOs | Clean object construction |
+| **Decorator** | Rate limiting filter (Bucket4j) | Non-invasive request throttling |
 
 ## Security Architecture
 
@@ -66,25 +66,31 @@ com.example.blog_app_springboot/
 ```
 POST   /api/v1/auth/login              → { accessToken, refreshToken, user }
 POST   /api/v1/auth/refresh            → { accessToken, refreshToken }
+POST   /api/v1/auth/logout             → void (blacklists current token)
 POST   /api/v1/users                   → { user, token }
 GET    /api/v1/users/{id}              → { user }
+GET    /api/v1/users/me                → { user } (authenticated)
+GET    /api/v1/users/me/stats          → { articles, views, likes, followers } (authenticated)
 GET    /api/v1/articles                → PageResponse<ArticleResponse>
 GET    /api/v1/articles/{slug}         → ArticleResponse (with author, tags, likes, comments count)
-POST   /api/v1/articles                → ArticleResponse
-PUT    /api/v1/articles/{id}           → ArticleResponse
-DELETE /api/v1/articles/{id}           → void
-GET    /api/v1/articles/my             → PageResponse<ArticleResponse> (incl. drafts)
+POST   /api/v1/articles                → ArticleResponse (authenticated, creates as draft)
+PUT    /api/v1/articles/{id}           → ArticleResponse (owner only)
+DELETE /api/v1/articles/{id}           → void (owner only)
+GET    /api/v1/articles/my             → PageResponse<ArticleResponse> (incl. drafts, authenticated)
 GET    /api/v1/articles/search         → PageResponse<ArticleResponse>
-GET    /api/v1/feed                    → PageResponse<ArticleResponse>
-POST   /api/v1/articles/{slug}/comments → CommentResponse
-GET    /api/v1/articles/{slug}/comments → List<CommentResponse> (nested)
-DELETE /api/v1/comments/{id}           → void
-POST   /api/v1/articles/{slug}/like    → { liked: boolean, count }
-POST   /api/v1/articles/{slug}/bookmark → { bookmarked: boolean }
-POST   /api/v1/users/{id}/follow       → { following: boolean, count }
-GET    /api/v1/tags                    → List<TagResponse>
-GET    /api/v1/users/me/stats          → { articles, views, likes, followers }
 GET    /api/v1/articles/popular        → List<ArticleResponse>
+POST   /api/v1/articles/{slug}/comments → CommentResponse (authenticated)
+GET    /api/v1/articles/{slug}/comments → List<CommentResponse> (nested)
+GET    /api/v1/articles/{slug}/comments/{commentId}/replies → List<CommentResponse>
+DELETE /api/v1/articles/{slug}/comments/{commentId} → void (owner or admin, authenticated)
+POST   /api/v1/articles/{slug}/like    → { liked: boolean, count } (authenticated)
+POST   /api/v1/articles/{slug}/bookmark → { bookmarked: boolean } (authenticated)
+POST   /api/v1/users/{id}/follow       → { following: boolean, count } (authenticated)
+GET    /api/v1/tags                    → List<TagResponse>
+GET    /api/v1/tags/{slug}             → TagResponse
+POST   /api/v1/tags                    → TagResponse (admin only)
+DELETE /api/v1/tags/{id}               → void (admin only)
+GET    /api/v1/feed                    → PageResponse<ArticleResponse> (authenticated)
 ```
 
 ---
@@ -153,7 +159,7 @@ GET    /api/v1/articles/popular        → List<ArticleResponse>
 | 3.1 | Update `CommentEntity` | Extend `BaseEntity`, add `parentId` (self-referencing `@ManyToOne` for replies), indexes | Completed |
 | 3.2 | Create `CommentService` interface + impl | `createComment()`, `getCommentsByArticle()`, `getReplies()`, `deleteComment()` | Completed |
 | 3.3 | Create `CommentDtoMapper` | Map to nested response with `replies: List<CommentResponse>` | Completed |
-| 3.4 | Wire `CommentController` | `POST /articles/{slug}/comments`, `GET /articles/{slug}/comments`, `GET /comments/{id}/replies`, `DELETE /comments/{id}` | Completed |
+| 3.4 | Wire `CommentController` | `POST /articles/{slug}/comments`, `GET /articles/{slug}/comments`, `GET /articles/{slug}/comments/{commentId}/replies`, `DELETE /articles/{slug}/comments/{commentId}` | Completed |
 | 3.5 | Add authorization | Only comment author or admin can delete | Completed |
 | 3.6 | Add validation | Body not blank, max length | Completed |
 | 3.7 | Write comment tests | Unit + integration tests | Completed |
@@ -215,9 +221,9 @@ GET    /api/v1/articles/popular        → List<ArticleResponse>
 |---|------|---------|--------|
 | 7.1 | Draft/Published logic | `GET /articles` only returns `PUBLISHED`, `GET /articles/my` includes `DRAFT`, author-only draft visibility | Completed |
 | 7.2 | Reading time | `ReadingTimeCalculator` utility: word count / 200 wpm, add to `ArticleResponse` | Completed |
-| 7.3 | View count tracking | `ArticleViewEntity` or simple counter, `GET /articles/{slug}` increments, `GET /articles/popular` | Completed |
-| 7.4 | Spring Events for notifications | `@DomainEvent` on comment creation, `@EventListener` triggers email | Completed |
-| 7.5 | Email service | `JavaMailSender`, async `@Async` email dispatch, templates for "new comment", "new follower" | Completed |
+| 7.3 | View count tracking | `ArticleViewEntity` with IP-based dedup (24h window), `GET /articles/{slug}` increments, `viewCount` in response, `GET /articles/popular` sorted by views | Completed |
+| 7.4 | Spring Events for notifications | `CommentCreatedEvent`, `UserFollowedEvent` with `@EventListener` triggers email | Completed |
+| 7.5 | Email service | `JavaMailSender`, async `@Async` email dispatch, "new comment" and "new follower" notifications wired to article author/followed user | Completed |
 | 7.6 | Author dashboard | `GET /users/me/stats` — total articles, published, drafts, comments, followers, following | Completed |
 | 7.7 | Write tests | Unit + integration tests | Completed |
 
@@ -239,3 +245,22 @@ GET    /api/v1/articles/popular        → List<ArticleResponse>
 | 8.8 | CI/CD prep | GitHub Actions workflow: build, test, artifact on failure | Completed |
 | 8.9 | Security audit | CSRF disabled (stateless), CORS locked down, security headers (HSTS, CSP, Referrer, Permissions), request size limits | Completed |
 | 8.10 | Final integration tests | End-to-end test suite covering full user journey (50 API steps verified) | Completed |
+
+---
+
+## Sprint 9: Code Quality & Production Hardening
+
+**Goal:** Environment validation, analytics, documentation, and code quality improvements.
+
+| # | Task | Details | Status |
+|---|------|---------|--------|
+| 9.1 | Environment variable template | `.env.example` with all required/optional variables documented | Completed |
+| 9.2 | Docker HEALTHCHECK | Add `HEALTHCHECK` instruction using `/actuator/health` endpoint | Completed |
+| 9.3 | API endpoint reconciliation | Fix `Sprints.md` API contract to match actual implementation (add `GET /users/me`, fix comment delete path) | Completed |
+| 9.4 | API versioning documentation | Add versioning strategy section to `README.md` with lifecycle and migration guide | Completed |
+| 9.5 | Environment validation | `AppProperties` with `@PostConstruct` validation — fail fast on missing prod variables | Completed |
+| 9.6 | Constants package | Create `common/constants/` with `AppConstants` and `SecurityConstants`, refactor `SecurityConfig` and `CacheConfig` | Completed |
+| 9.7 | Analytics module | `ArticleViewEntity`, `ArticleViewRepository`, `ViewCountService` with IP-based dedup (24h window), `viewCount` in `ArticleResponse` | Completed |
+| 9.8 | Complete email notifications | Wire `NotificationListener` to send actual emails via `EmailService` on comment/follow events | Completed |
+| 9.9 | Fix FeedService N+1 query | Add `findByFollowerId()` to `FollowRepository`, replace inefficient stream filtering | Completed |
+| 9.10 | API testing guide updates | Add Phase 8.5 (Analytics & View Tracking) to `API_testing.md`, reset progress markers | Completed |

@@ -292,6 +292,34 @@ follows            │
 
 ---
 
+## API Versioning
+
+This API uses URL-based versioning with the `/api/v1/` prefix.
+
+### Current Version: v1
+
+All endpoints are prefixed with `/api/v1/`. This versioning strategy allows for:
+- **Backward compatibility** — existing clients continue to work with v1
+- **Parallel versions** — future versions (v2, v3) can coexist alongside v1
+- **Clear deprecation path** — old versions can be sunset with advance notice
+
+### Version Lifecycle
+
+| Phase | Description |
+|-------|-------------|
+| **Current** | Active development, all features available |
+| **Deprecated** | Still functional, no new features, migration guide provided |
+| **Sunset** | Removed after 6-month deprecation period |
+
+### Migration Guide
+
+When a new API version is released:
+1. Migration guide will be published in this README
+2. Deprecated version will be marked in Swagger UI
+3. Sunset date will be announced at least 6 months in advance
+
+---
+
 ## License
 
 MIT

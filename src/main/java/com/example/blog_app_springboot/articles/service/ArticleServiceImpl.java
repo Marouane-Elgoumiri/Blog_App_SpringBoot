@@ -1,5 +1,6 @@
 package com.example.blog_app_springboot.articles.service;
 
+import com.example.blog_app_springboot.analytics.repository.ArticleViewRepository;
 import com.example.blog_app_springboot.articles.dtos.ArticleResponse;
 import com.example.blog_app_springboot.articles.dtos.CreateArticleRequest;
 import com.example.blog_app_springboot.articles.dtos.UpdateArticleRequest;
@@ -7,6 +8,7 @@ import com.example.blog_app_springboot.articles.entity.ArticleEntity;
 import com.example.blog_app_springboot.articles.entity.ArticleStatus;
 import com.example.blog_app_springboot.articles.repository.ArticleRepository;
 import com.example.blog_app_springboot.comments.repository.CommentRepository;
+import com.example.blog_app_springboot.common.constants.AppConstants;
 import com.example.blog_app_springboot.common.dtos.PageResponse;
 import com.example.blog_app_springboot.common.exceptions.ResourceNotFoundException;
 import com.example.blog_app_springboot.common.exceptions.UnauthorizedException;
@@ -17,6 +19,7 @@ import com.example.blog_app_springboot.tags.entity.TagEntity;
 import com.example.blog_app_springboot.tags.service.TagService;
 import com.example.blog_app_springboot.users.entity.UserEntity;
 import com.example.blog_app_springboot.users.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +42,8 @@ public class ArticleServiceImpl implements ArticleService {
     private final ReadingTimeCalculator readingTimeCalculator;
     private final InteractionService interactionService;
     private final CommentRepository commentRepository;
+    private final ArticleViewRepository articleViewRepository;
+    private final HttpServletRequest httpServletRequest;
 
     @Override
     @Transactional(readOnly = true)
@@ -48,11 +53,41 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ArticleResponse getArticleBySlug(String slug) {
         var article = articleRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Article", "slug", slug));
+
+        recordView(article.getId());
+
         return toResponse(article);
+    }
+
+    private void recordView(Long articleId) {
+        String viewerIp = getClientIp();
+        var since = java.time.LocalDateTime.now().minusHours(24);
+
+        if (articleViewRepository.hasRecentView(articleId, viewerIp, since)) {
+            return;
+        }
+
+        var article = articleRepository.findById(articleId).orElse(null);
+        if (article != null) {
+            var view = com.example.blog_app_springboot.analytics.entity.ArticleViewEntity.builder()
+                    .article(article)
+                    .viewerIp(viewerIp)
+                    .viewedAt(java.time.LocalDateTime.now())
+                    .build();
+            articleViewRepository.save(view);
+        }
+    }
+
+    private String getClientIp() {
+        String xForwardedFor = httpServletRequest.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return httpServletRequest.getRemoteAddr();
     }
 
     @Override
@@ -140,6 +175,7 @@ public class ArticleServiceImpl implements ArticleService {
         boolean bookmarked = currentUserId != null && interactionService.hasBookmarked(article.getId(), currentUserId);
         long likeCount = interactionService.getLikeCount(article.getId());
         int commentCount = commentRepository.findByArticleIdAndParentIsNullOrderByCreatedAtDesc(article.getId()).size();
+        long viewCount = articleViewRepository.countByArticleId(article.getId());
 
         return ArticleResponse.builder()
                 .id(article.getId())
@@ -167,6 +203,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .likedByCurrentUser(liked)
                 .bookmarkedByCurrentUser(bookmarked)
                 .commentCount(commentCount)
+                .viewCount(viewCount)
                 .build();
     }
 

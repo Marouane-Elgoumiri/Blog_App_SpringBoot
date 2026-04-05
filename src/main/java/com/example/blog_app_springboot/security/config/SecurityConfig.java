@@ -1,5 +1,6 @@
 package com.example.blog_app_springboot.security.config;
 
+import com.example.blog_app_springboot.common.constants.SecurityConstants;
 import com.example.blog_app_springboot.config.RateLimitingFilter;
 import com.example.blog_app_springboot.security.jwt.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 
 @Configuration
 @EnableWebSecurity
@@ -43,28 +45,34 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/{id}").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/articles/{slug}/comments").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/articles/{slug}/comments/{commentId}/replies").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/tags").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    for (String pattern : SecurityConstants.PUBLIC_AUTH_ENDPOINTS) {
+                        auth.requestMatchers(pattern).permitAll();
+                    }
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/users/{id}").permitAll();
+                    auth.requestMatchers("/h2-console/**").permitAll();
+                    for (String pattern : SecurityConstants.SWAGGER_ENDPOINTS) {
+                        auth.requestMatchers(pattern).permitAll();
+                    }
+                    for (String pattern : SecurityConstants.ACTUATOR_PUBLIC_ENDPOINTS) {
+                        auth.requestMatchers(pattern).permitAll();
+                    }
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/articles/{slug}/comments").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/articles/{slug}/comments/{commentId}/replies").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/tags").permitAll();
+                    auth.anyRequest().authenticated();
+                })
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.sameOrigin())
                         .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
                         .httpStrictTransportSecurity(hsts -> hsts
-                                .maxAgeInSeconds(31536000)
+                                .maxAgeInSeconds(Long.parseLong(SecurityConstants.HSTS_MAX_AGE_SECONDS))
                                 .includeSubDomains(true))
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
-                        .referrerPolicy(referrer -> referrer.policy(
-                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                        .permissionsPolicy(permissions -> permissions.policy("camera=(), microphone=(), geolocation=()"))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(SecurityConstants.CSP_POLICY))
+                        .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicy(permissions -> permissions.policy(SecurityConstants.PERMISSIONS_POLICY))
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

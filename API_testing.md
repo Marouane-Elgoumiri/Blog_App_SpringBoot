@@ -5,6 +5,9 @@
 **Base URL:** `http://localhost:8080/api/v1`
 **Prerequisites:** App running on port 8080 with `dev` profile (H2 database)
 
+> **Note:** All progress markers have been reset (⬜) to allow fresh test runs.
+> Previous runs were marked ✅ on 2026-04-04.
+
 ---
 
 ## Instructions
@@ -470,13 +473,41 @@ curl -s "http://localhost:8080/api/v1/articles/search?q=spring&tag=spring-boot" 
 
 | # | Step | Command | Expected | Progress |
 |---|------|---------|----------|----------|
-| 44 | Get User Stats | See below | 200, stats data | ✅ 2026-04-04 |
+| 44 | Get User Stats | See below | 200, stats data | ⬜ |
 
 ### Step 44: Get User Stats
 ```bash
 curl -s http://localhost:8080/api/v1/users/me/stats \
   -H "Authorization: Bearer $TOKEN_A" | jq .
 # Expected: totalArticles, publishedArticles, draftArticles, totalComments, totalFollowers, totalFollowing
+```
+
+---
+
+## Phase 8.5: Analytics & View Tracking
+
+| # | Step | Command | Expected | Progress |
+|---|------|---------|----------|----------|
+| 44a | Get Article (triggers view) | See below | 200, viewCount=1 | ⬜ |
+| 44b | Get Article Again (dedup) | See below | 200, viewCount=1 (same IP, within 24h) | ⬜ |
+| 44c | Get Popular Articles | See below | 200, sorted by view count | ⬜ |
+
+### Step 44a: Get Article (triggers view)
+```bash
+curl -s http://localhost:8080/api/v1/articles/<slug_from_step_11> | jq '.data.viewCount'
+# Expected: viewCount=1 (first view recorded)
+```
+
+### Step 44b: Get Article Again (dedup)
+```bash
+curl -s http://localhost:8080/api/v1/articles/<slug_from_step_11> | jq '.data.viewCount'
+# Expected: viewCount=1 (same IP within 24h window, deduplicated)
+```
+
+### Step 44c: Get Popular Articles
+```bash
+curl -s "http://localhost:8080/api/v1/articles/popular?page=0&size=10" | jq .
+# Expected: articles sorted by view count (descending)
 ```
 
 ---
@@ -547,12 +578,12 @@ curl -s -w "\nHTTP: %{http_code}" http://localhost:8080/api/v1/tags | jq '.succe
 
 | # | Step | Command | Expected | Progress |
 |---|------|---------|----------|----------|
-| 51 | Health Check | See below | 200, `{"status":"UP"}` | ✅ 2026-04-04 |
-| 52 | App Info | See below | 200, app metadata | ✅ 2026-04-04 |
-| 53 | Metrics Endpoint | See below | 200, 100+ metrics | ✅ 2026-04-04 |
-| 54 | Rate Limit Headers | See below | 200, `X-Rate-Limit-Remaining` header | ✅ 2026-04-04 |
-| 55 | Security Headers | See below | 200, HSTS/CSP/Referrer/Permissions/nosniff | ✅ 2026-04-04 |
-| 56 | Rate Limit Exhaustion | See below | 429 after ~17 requests (IP bucket shared with Phase 9) | ✅ 2026-04-04 |
+| 51 | Health Check | See below | 200, `{"status":"UP"}` | ⬜ |
+| 52 | App Info | See below | 200, app metadata | ⬜ |
+| 53 | Metrics Endpoint | See below | 200, 100+ metrics | ⬜ |
+| 54 | Rate Limit Headers | See below | 200, `X-Rate-Limit-Remaining` header | ⬜ |
+| 55 | Security Headers | See below | 200, HSTS/CSP/Referrer/Permissions/nosniff | ⬜ |
+| 56 | Rate Limit Exhaustion | See below | 429 after ~17 requests (IP bucket shared with Phase 9) | ⬜ |
 
 ### Step 51: Health Check
 ```bash

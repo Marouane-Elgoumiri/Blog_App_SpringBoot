@@ -84,7 +84,7 @@ class FeedServiceTest {
     @Test
     void can_get_feed_with_followed_users() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(followRepository.findAll()).thenReturn(List.of(
+        when(followRepository.findByFollowerId(1L)).thenReturn(List.of(
                 FollowEntity.builder().follower(user).following(followedUser).build()
         ));
         when(articleRepository.findAll(any(Specification.class), any(PageRequest.class)))
@@ -99,7 +99,7 @@ class FeedServiceTest {
     @Test
     void can_get_feed_when_no_follows() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(followRepository.findAll()).thenReturn(List.of());
+        when(followRepository.findByFollowerId(1L)).thenReturn(List.of());
         when(articleRepository.findAll(any(Specification.class), any(PageRequest.class)))
                 .thenReturn(Page.empty());
 

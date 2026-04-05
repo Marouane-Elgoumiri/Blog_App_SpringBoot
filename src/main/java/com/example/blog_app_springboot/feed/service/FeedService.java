@@ -4,9 +4,10 @@ import com.example.blog_app_springboot.articles.dtos.ArticleResponse;
 import com.example.blog_app_springboot.articles.entity.ArticleEntity;
 import com.example.blog_app_springboot.articles.entity.ArticleStatus;
 import com.example.blog_app_springboot.articles.repository.ArticleRepository;
+import com.example.blog_app_springboot.common.constants.AppConstants;
 import com.example.blog_app_springboot.common.dtos.PageResponse;
+import com.example.blog_app_springboot.common.exceptions.ResourceNotFoundException;
 import com.example.blog_app_springboot.follows.repository.FollowRepository;
-import com.example.blog_app_springboot.users.entity.UserEntity;
 import com.example.blog_app_springboot.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,11 +28,10 @@ public class FeedService {
 
     @Transactional(readOnly = true)
     public PageResponse<ArticleResponse> getFeed(Long userId, Pageable pageable) {
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        var followingIds = followRepository.findAll().stream()
-                .filter(f -> f.getFollower().getId().equals(userId))
+        List<Long> followingIds = followRepository.findByFollowerId(userId).stream()
                 .map(f -> f.getFollowing().getId())
                 .toList();
 

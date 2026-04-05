@@ -25,6 +25,7 @@ public class ArticleResponse {
     private boolean likedByCurrentUser;
     private boolean bookmarkedByCurrentUser;
     private int commentCount;
+    private long viewCount;
 
     @Data
     @Builder
