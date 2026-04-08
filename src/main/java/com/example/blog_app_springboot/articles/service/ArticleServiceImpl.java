@@ -54,9 +54,15 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public ArticleResponse getArticleBySlug(String slug) {
+    public ArticleResponse getArticleBySlug(String slug, Long currentUserId) {
         var article = articleRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Article", "slug", slug));
+
+        if (article.getStatus() == ArticleStatus.DRAFT) {
+            if (currentUserId == null || !article.getAuthor().getId().equals(currentUserId)) {
+                throw new ResourceNotFoundException("Article", "slug", slug);
+            }
+        }
 
         recordView(article.getId());
 
@@ -102,72 +108,123 @@ public class ArticleServiceImpl implements ArticleService {
         return PageResponse.from(articles.map(this::toResponse));
     }
 
-    @Override
-    @Transactional
-    public ArticleResponse createArticle(CreateArticleRequest request, Long authorId) {
-        var author = userRepository.findById(authorId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", authorId));
+	@Override
+	@Transactional
+	public ArticleResponse createArticle(CreateArticleRequest request, Long authorId) {
+		var author = userRepository.findById(authorId)
+			.orElseThrow(() -> new ResourceNotFoundException("User", "id", authorId));
 
-        String slug = slugGenerator.generateUniqueSlug(request.getTitle(), articleRepository::existsBySlug);
+		String slug = slugGenerator.generateUniqueSlug(request.getTitle(), articleRepository::existsBySlug);
 
-        Set<TagEntity> tags = new HashSet<>(tagService.findOrCreateTags(request.getTags()));
+		Set<TagEntity> tags = new HashSet<>(tagService.findOrCreateTags(request.getTags()));
 
-        var article = ArticleEntity.builder()
-                .title(request.getTitle())
-                .slug(slug)
-                .subtitle(request.getSubtitle())
-                .body(request.getBody())
-                .author(author)
-                .status(ArticleStatus.DRAFT)
-                .tags(tags)
-                .build();
+		ArticleStatus status = request.getStatus() != null ? request.getStatus() : ArticleStatus.DRAFT;
 
-        var savedArticle = articleRepository.save(article);
-        return toResponse(savedArticle);
-    }
+		var article = ArticleEntity.builder()
+			.title(request.getTitle())
+			.slug(slug)
+			.subtitle(request.getSubtitle())
+			.body(request.getBody())
+			.author(author)
+			.status(status)
+			.tags(tags)
+			.build();
 
-    @Override
-    @Transactional
-    public ArticleResponse updateArticle(Long articleId, UpdateArticleRequest request, Long userId) {
-        var article = articleRepository.findById(articleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Article", "id", articleId));
+		var savedArticle = articleRepository.save(article);
+		return toResponse(savedArticle);
+	}
 
-        if (!article.getAuthor().getId().equals(userId)) {
-            throw new UnauthorizedException("You can only edit your own articles");
-        }
+	@Override
+	@Transactional
+	public ArticleResponse updateArticle(Long articleId, UpdateArticleRequest request, Long userId) {
+		var article = articleRepository.findById(articleId)
+			.orElseThrow(() -> new ResourceNotFoundException("Article", "id", articleId));
 
-        if (request.getTitle() != null) {
-            article.setTitle(request.getTitle());
-            String newSlug = slugGenerator.generateUniqueSlug(request.getTitle(), articleRepository::existsBySlug);
-            article.setSlug(newSlug);
-        }
-        if (request.getSubtitle() != null) {
-            article.setSubtitle(request.getSubtitle());
-        }
-        if (request.getBody() != null) {
-            article.setBody(request.getBody());
-        }
-        if (request.getTags() != null) {
-            article.getTags().clear();
-            article.getTags().addAll(tagService.findOrCreateTags(request.getTags()));
-        }
+		if (!article.getAuthor().getId().equals(userId)) {
+			throw new UnauthorizedException("You can only edit your own articles");
+		}
 
-        var updatedArticle = articleRepository.save(article);
-        return toResponse(updatedArticle);
-    }
+		if (request.getTitle() != null) {
+			article.setTitle(request.getTitle());
+			String newSlug = slugGenerator.generateUniqueSlug(request.getTitle(), articleRepository::existsBySlug);
+			article.setSlug(newSlug);
+		}
+		if (request.getSubtitle() != null) {
+			article.setSubtitle(request.getSubtitle());
+		}
+		if (request.getBody() != null) {
+			article.setBody(request.getBody());
+		}
+		if (request.getTags() != null) {
+			article.getTags().clear();
+			article.getTags().addAll(tagService.findOrCreateTags(request.getTags()));
+		}
+		if (request.getStatus() != null) {
+			article.setStatus(request.getStatus());
+		}
 
-    @Override
-    @Transactional
-    public void deleteArticle(Long articleId, Long userId) {
-        var article = articleRepository.findById(articleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Article", "id", articleId));
+		var updatedArticle = articleRepository.save(article);
+		return toResponse(updatedArticle);
+	}
 
-        if (!article.getAuthor().getId().equals(userId)) {
-            throw new UnauthorizedException("You can only delete your own articles");
-        }
+	@Override
+	@Transactional
+	public void deleteArticle(Long articleId, Long userId) {
+		var article = articleRepository.findById(articleId)
+			.orElseThrow(() -> new ResourceNotFoundException("Article", "id", articleId));
 
-        articleRepository.delete(article);
-    }
+		if (!article.getAuthor().getId().equals(userId)) {
+			throw new UnauthorizedException("You can only delete your own articles");
+		}
+
+		articleRepository.delete(article);
+	}
+
+	@Override
+	@Transactional
+	public ArticleResponse updateArticleBySlug(String slug, UpdateArticleRequest request, Long userId) {
+		var article = articleRepository.findBySlug(slug)
+			.orElseThrow(() -> new ResourceNotFoundException("Article", "slug", slug));
+
+		if (!article.getAuthor().getId().equals(userId)) {
+			throw new UnauthorizedException("You can only edit your own articles");
+		}
+
+		if (request.getTitle() != null) {
+			article.setTitle(request.getTitle());
+			String newSlug = slugGenerator.generateUniqueSlug(request.getTitle(), articleRepository::existsBySlug);
+			article.setSlug(newSlug);
+		}
+		if (request.getSubtitle() != null) {
+			article.setSubtitle(request.getSubtitle());
+		}
+		if (request.getBody() != null) {
+			article.setBody(request.getBody());
+		}
+		if (request.getTags() != null) {
+			article.getTags().clear();
+			article.getTags().addAll(tagService.findOrCreateTags(request.getTags()));
+		}
+		if (request.getStatus() != null) {
+			article.setStatus(request.getStatus());
+		}
+
+		var updatedArticle = articleRepository.save(article);
+		return toResponse(updatedArticle);
+	}
+
+	@Override
+	@Transactional
+	public void deleteArticleBySlug(String slug, Long userId) {
+		var article = articleRepository.findBySlug(slug)
+			.orElseThrow(() -> new ResourceNotFoundException("Article", "slug", slug));
+
+		if (!article.getAuthor().getId().equals(userId)) {
+			throw new UnauthorizedException("You can only delete your own articles");
+		}
+
+		articleRepository.delete(article);
+	}
 
     private ArticleResponse toResponse(ArticleEntity article) {
         Long currentUserId = getCurrentUserId();

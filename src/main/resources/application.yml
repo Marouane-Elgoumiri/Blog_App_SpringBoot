@@ -3,6 +3,8 @@ spring:
     active: dev
   application:
     name: cognipost
+  config:
+    import: "optional:dotenv:"
 
 info:
   app:
@@ -17,28 +19,27 @@ logging:
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 ---
-# DEV Profile
+# DEV Profile - PostgreSQL (local development)
 spring:
   config:
     activate:
       on-profile: dev
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:./blog_app;AUTO_SERVER=TRUE
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/cognipost
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:}
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+  h2:
+    console:
+      enabled: false
 
 server:
   port: 8080
@@ -68,20 +69,20 @@ management:
   endpoint:
     health:
       show-details: always
-  info:
-    env:
-      enabled: true
+    info:
+      env:
+        enabled: true
 
 ---
-# PROD Profile
+# POSTGRES Profile - Production deployment with environment variables
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: postgres
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/blog_app}
-    username: ${DB_USERNAME}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/cognipost}
+    username: ${DB_USERNAME:admin}
     password: ${DB_PASSWORD}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -131,9 +132,9 @@ management:
   endpoint:
     health:
       show-details: when-authorized
-  info:
-    env:
-      enabled: true
+    info:
+      env:
+        enabled: true
 
 logging:
   level:
@@ -142,7 +143,7 @@ logging:
     org.springframework.web.filter.CommonsRequestLoggingFilter: INFO
 
 ---
-# TEST Profile
+# TEST Profile - H2 in-memory (for unit tests)
 spring:
   config:
     activate:
@@ -157,6 +158,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+  h2:
+    console:
+      enabled: true
 
 app:
   jwt:

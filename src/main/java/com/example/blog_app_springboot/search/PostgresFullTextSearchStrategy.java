@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("prod")
+@Profile("postgres")
 @RequiredArgsConstructor
 public class PostgresFullTextSearchStrategy implements SearchStrategy {
 

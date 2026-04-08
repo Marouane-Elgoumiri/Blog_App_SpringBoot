@@ -11,7 +11,7 @@ spring:
     show-sql: false
   h2:
     console:
-      enabled: false
+      enabled: true
 
 app:
   jwt:

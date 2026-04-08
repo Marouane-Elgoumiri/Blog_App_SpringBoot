@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_PROFILES_ACTIVE=postgres
       - DB_URL=jdbc:postgresql://db:5432/blog_app
       - DB_USERNAME=${DB_USERNAME:-bloguser}
       - DB_PASSWORD=${DB_PASSWORD:-blogpass}

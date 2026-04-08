@@ -8,6 +8,7 @@ import com.example.blog_app_springboot.common.exceptions.ResourceNotFoundExcepti
 import com.example.blog_app_springboot.follows.repository.FollowRepository;
 import com.example.blog_app_springboot.interactions.repository.LikeRepository;
 import com.example.blog_app_springboot.users.dtos.CreateUserRequest;
+import com.example.blog_app_springboot.users.dtos.UpdateUserRequest;
 import com.example.blog_app_springboot.users.dtos.UserResponse;
 import com.example.blog_app_springboot.users.dtos.UserStatsResponse;
 import com.example.blog_app_springboot.users.entity.UserEntity;
@@ -21,69 +22,89 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final FollowRepository followRepository;
-    private final ArticleRepository articleRepository;
-    private final CommentRepository commentRepository;
-    private final LikeRepository likeRepository;
+	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final FollowRepository followRepository;
+	private final ArticleRepository articleRepository;
+	private final CommentRepository commentRepository;
+	private final LikeRepository likeRepository;
 
-    @Transactional
-    public UserResponse createUser(CreateUserRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateResourceException("Username already exists: " + request.getUsername());
-        }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Email already exists: " + request.getEmail());
-        }
+	@Transactional
+	public UserResponse createUser(CreateUserRequest request) {
+		if (userRepository.existsByUsername(request.getUsername())) {
+			throw new DuplicateResourceException("Username already exists: " + request.getUsername());
+		}
+		if (userRepository.existsByEmail(request.getEmail())) {
+			throw new DuplicateResourceException("Email already exists: " + request.getEmail());
+		}
 
-        var user = UserEntity.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .email(request.getEmail())
-                .build();
+		var user = UserEntity.builder()
+			.username(request.getUsername())
+			.password(passwordEncoder.encode(request.getPassword()))
+			.email(request.getEmail())
+			.build();
 
-        var savedUser = userRepository.save(user);
-        return UserResponse.from(savedUser);
-    }
+		var savedUser = userRepository.save(user);
+		return UserResponse.from(savedUser);
+	}
 
-    @Transactional(readOnly = true)
-    public UserResponse getUserById(Long id) {
-        var user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-        long followerCount = followRepository.countByFollowingId(id);
-        long followingCount = followRepository.countByFollowerId(id);
-        return UserResponse.from(user, followerCount, followingCount);
-    }
+	@Transactional(readOnly = true)
+	public UserResponse getUserById(Long id) {
+		var user = userRepository.findById(id)
+			.orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+		long followerCount = followRepository.countByFollowingId(id);
+		long followingCount = followRepository.countByFollowerId(id);
+		return UserResponse.from(user, followerCount, followingCount);
+	}
 
-    @Transactional(readOnly = true)
-    public UserResponse getUserByUsername(String username) {
-        var user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
-        long followerCount = followRepository.countByFollowingId(user.getId());
-        long followingCount = followRepository.countByFollowerId(user.getId());
-        return UserResponse.from(user, followerCount, followingCount);
-    }
+	@Transactional(readOnly = true)
+	public UserResponse getUserByUsername(String username) {
+		var user = userRepository.findByUsername(username)
+			.orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+		long followerCount = followRepository.countByFollowingId(user.getId());
+		long followingCount = followRepository.countByFollowerId(user.getId());
+		return UserResponse.from(user, followerCount, followingCount);
+	}
 
-    @Transactional(readOnly = true)
-    public UserStatsResponse getUserStats(Long userId) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+	@Transactional
+	public UserResponse updateUser(Long userId, UpdateUserRequest request) {
+		var user = userRepository.findById(userId)
+			.orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        long totalArticles = articleRepository.countByAuthorId(userId);
-        long publishedArticles = articleRepository.countByAuthorIdAndStatus(userId, ArticleStatus.PUBLISHED);
-        long draftArticles = articleRepository.countByAuthorIdAndStatus(userId, ArticleStatus.DRAFT);
-        long totalComments = commentRepository.countByAuthorId(userId);
-        long totalFollowers = followRepository.countByFollowingId(userId);
-        long totalFollowing = followRepository.countByFollowerId(userId);
+		if (request.getBio() != null) {
+			user.setBio(request.getBio());
+		}
+		if (request.getImage() != null) {
+			user.setImage(request.getImage());
+		}
 
-        return UserStatsResponse.builder()
-                .totalArticles(totalArticles)
-                .publishedArticles(publishedArticles)
-                .draftArticles(draftArticles)
-                .totalComments(totalComments)
-                .totalFollowers(totalFollowers)
-                .totalFollowing(totalFollowing)
-                .build();
-    }
+		var savedUser = userRepository.save(user);
+		long followerCount = followRepository.countByFollowingId(userId);
+		long followingCount = followRepository.countByFollowerId(userId);
+		return UserResponse.from(savedUser, followerCount, followingCount);
+	}
+
+	@Transactional(readOnly = true)
+	public UserStatsResponse getUserStats(Long userId) {
+		userRepository.findById(userId)
+			.orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+		long totalArticles = articleRepository.countByAuthorId(userId);
+		long publishedArticles = articleRepository.countByAuthorIdAndStatus(userId, ArticleStatus.PUBLISHED);
+		long draftArticles = articleRepository.countByAuthorIdAndStatus(userId, ArticleStatus.DRAFT);
+		long totalComments = commentRepository.countByAuthorId(userId);
+		long totalLikes = likeRepository.countByArticleAuthorId(userId);
+		long totalFollowers = followRepository.countByFollowingId(userId);
+		long totalFollowing = followRepository.countByFollowerId(userId);
+
+		return UserStatsResponse.builder()
+			.totalArticles(totalArticles)
+			.publishedArticles(publishedArticles)
+			.draftArticles(draftArticles)
+			.totalComments(totalComments)
+			.totalLikes(totalLikes)
+			.totalFollowers(totalFollowers)
+			.totalFollowing(totalFollowing)
+			.build();
+	}
 }

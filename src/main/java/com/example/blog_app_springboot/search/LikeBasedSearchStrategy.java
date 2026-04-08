@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("!prod")
+@Profile("!postgres")
 @RequiredArgsConstructor
 public class LikeBasedSearchStrategy implements SearchStrategy {
 

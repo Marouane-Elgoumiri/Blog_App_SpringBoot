@@ -35,7 +35,8 @@ public class ArticlesController {
 
     @GetMapping("/{slug}")
     public ResponseEntity<ApiResponse<ArticleResponse>> getArticle(@PathVariable String slug) {
-        var response = articleService.getArticleBySlug(slug);
+        Long currentUserId = securityUtil.getCurrentUserIdOrNull();
+        var response = articleService.getArticleBySlug(slug, currentUserId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -58,21 +59,37 @@ public class ArticlesController {
                 .body(ApiResponse.success("Article created successfully", response));
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<ArticleResponse>> updateArticle(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateArticleRequest request) {
-        var response = articleService.updateArticle(id, request, securityUtil.getCurrentUserId());
-        return ResponseEntity.ok(ApiResponse.success("Article updated successfully", response));
-    }
+	@PutMapping("/{id}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<ApiResponse<ArticleResponse>> updateArticle(
+		@PathVariable Long id,
+		@Valid @RequestBody UpdateArticleRequest request) {
+		var response = articleService.updateArticle(id, request, securityUtil.getCurrentUserId());
+		return ResponseEntity.ok(ApiResponse.success("Article updated successfully", response));
+	}
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> deleteArticle(@PathVariable Long id) {
-        articleService.deleteArticle(id, securityUtil.getCurrentUserId());
-        return ResponseEntity.noContent().build();
-    }
+	@DeleteMapping("/{id}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> deleteArticle(@PathVariable Long id) {
+		articleService.deleteArticle(id, securityUtil.getCurrentUserId());
+		return ResponseEntity.noContent().build();
+	}
+
+	@PutMapping("/slug/{slug}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<ApiResponse<ArticleResponse>> updateArticleBySlug(
+		@PathVariable String slug,
+		@Valid @RequestBody UpdateArticleRequest request) {
+		var response = articleService.updateArticleBySlug(slug, request, securityUtil.getCurrentUserId());
+		return ResponseEntity.ok(ApiResponse.success("Article updated successfully", response));
+	}
+
+	@DeleteMapping("/slug/{slug}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> deleteArticleBySlug(@PathVariable String slug) {
+		articleService.deleteArticleBySlug(slug, securityUtil.getCurrentUserId());
+		return ResponseEntity.noContent().build();
+	}
 
     @GetMapping("/my")
     @PreAuthorize("isAuthenticated()")

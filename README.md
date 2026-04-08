@@ -190,32 +190,37 @@ Paginated responses use `PageResponse<T>`:
 git clone https://github.com/your-org/CogniPost.git
 cd CogniPost
 
-# Run with dev profile (H2 database)
+# Run with dev profile (PostgreSQL - default)
 ./gradlew bootRun
 
-# Run with prod profile (PostgreSQL)
-./gradlew bootRun --args='--spring.profiles.active=prod'
+# Run with postgres profile (production deployment)
+./gradlew bootRun --args='--spring.profiles.active=postgres'
 ```
 
 ### Configuration
 
-| Profile | Database | Port |
-|---------|----------|------|
-| `dev` | H2 (file-based) | 8080 |
-| `prod` | PostgreSQL | ${PORT} |
-| `test` | H2 (in-memory) | - |
-
-**H2 Console (dev):** `http://localhost:8080/h2-console`
+| Profile | Database | Port | Description |
+|---------|----------|------|-------------|
+| `dev` | PostgreSQL (localhost:5432/cognipost) | 8080 | Local development |
+| `postgres` | PostgreSQL (env vars) | ${PORT} | Production deployment |
+| `test` | H2 (in-memory) | - | Unit testing |
 
 **Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
-### Environment Variables (prod)
+### Environment Variables
 
+#### Development (.env file)
+| Variable | Description |
+|----------|-------------|
+| `DB_PASSWORD` | PostgreSQL password (if authentication required) |
+| `JWT_SECRET` | JWT signing key (min 256 bits) |
+
+#### Production (postgres profile)
 | Variable | Description |
 |----------|-------------|
 | `DB_URL` | PostgreSQL connection URL |
 | `DB_USERNAME` | Database username |
-| `DB_PASSWORD` | Database password |
+| `DB_PASSWORD` | Database password [REQUIRED] |
 | `JWT_SECRET` | JWT signing key (min 256 bits) |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins |
 
